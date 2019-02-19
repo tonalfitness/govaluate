@@ -282,6 +282,7 @@ func planPrecedenceLevel(
 			rightTypeCheck:  checks.right,
 			typeCheck:       checks.combined,
 			typeErrorFormat: typeErrorFormat,
+			originalToken:   token,
 		}, nil
 	}
 
@@ -316,6 +317,7 @@ func planFunction(stream *tokenStream) (*evaluationStage, error) {
 		rightStage:      rightStage,
 		operator:        makeFunctionStage(token.Value.(ExpressionFunction)),
 		typeErrorFormat: "Unable to run function '%v': %v",
+		originalToken:   token,
 	}, nil
 }
 
@@ -361,6 +363,7 @@ func planAccessor(stream *tokenStream) (*evaluationStage, error) {
 		rightStage:      rightStage,
 		operator:        makeAccessorStage(token.Value.([]string)),
 		typeErrorFormat: "Unable to access parameter field or method '%v': %v",
+		originalToken:   token,
 	}, nil
 }
 
@@ -439,8 +442,9 @@ func planValue(stream *tokenStream) (*evaluationStage, error) {
 	}
 
 	return &evaluationStage{
-		symbol:   symbol,
-		operator: operator,
+		symbol:        symbol,
+		operator:      operator,
+		originalToken: token,
 	}, nil
 }
 
@@ -717,8 +721,39 @@ func elideStage(root *evaluationStage) *evaluationStage {
 		return root
 	}
 
-	return &evaluationStage{
+	retStage := &evaluationStage{
 		symbol:   LITERAL,
 		operator: makeLiteralStage(result),
+	}
+
+	if token, err := resultToToken(result); err == nil {
+		retStage.originalToken = token
+	}
+
+	return retStage
+}
+
+func resultToToken(result interface{}) (ExpressionToken, error) {
+	switch v := result.(type) {
+	case float64:
+		token := ExpressionToken{
+			Kind:  NUMERIC,
+			Value: v,
+		}
+		return token, nil
+	case string:
+		token := ExpressionToken{
+			Kind:  STRING,
+			Value: v,
+		}
+		return token, nil
+	case bool:
+		token := ExpressionToken{
+			Kind:  BOOLEAN,
+			Value: v,
+		}
+		return token, nil
+	default:
+		return ExpressionToken{}, fmt.Errorf("Result type %v not supported", v)
 	}
 }
