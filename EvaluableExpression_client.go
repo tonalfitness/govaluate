@@ -118,7 +118,15 @@ func (expression EvaluableExpression) findNextClientString(stream *tokenStream, 
 	case VARIABLE:
 		variable := token.Value.(string)
 		if val, ok := parameters[variable]; ok {
-			ret = fmt.Sprintf("%v", val)
+			// Make a token and rewind to properly stringify
+			token, err := resultToToken(val)
+			if err == nil {
+				stream.tokens[stream.index-1] = token
+				stream.rewind()
+				return "", nil
+			} else {
+				ret = fmt.Sprintf("%v", val)
+			}
 		} else {
 			ret = fmt.Sprintf("%s", variable)
 		}
