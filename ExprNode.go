@@ -4,14 +4,9 @@ import (
 	"fmt"
 )
 
-type ExprNodeType int
-
-const (
-	NodeTypeLiteral ExprNodeType = iota
-	NodeTypeVariable
-	NodeTypeOperator
-)
-
+// ExprNode is a structured representation of an expression.
+// There are three types of nodes: literal, variable and operator. The latter
+// can have child nodes. They form a tree, where each node is an expression itself.
 type ExprNode struct {
 	Type  ExprNodeType
 	Name  string
@@ -19,6 +14,28 @@ type ExprNode struct {
 	Args  []ExprNode
 }
 
+// ExprNodeType is a type of ExprNode.
+type ExprNodeType int
+
+const (
+	// NodeTypeLiteral is just a constant literal, e.g. a boolean, a number, or a string.
+	// ExprNode.Value contains the actual value.
+	NodeTypeLiteral ExprNodeType = iota
+
+	// NodeTypeVariable is a variable.
+	// ExprNode.Name contains the name of the variable.
+	NodeTypeVariable
+
+	// NodeTypeOperator is an operation over the arguments, the other nodes.
+	// It can be a function call, a binary operator (+, -, *, etc) with two arguments,
+	// unary (!, -, ~), ternary (?:), etc. There are no restrictions on operator name,
+	// it just needs to be defined at the evaluation phase.
+	// ExprNode.Name is the name of the operation.
+	// ExprNode.Args are the arguments.
+	NodeTypeOperator
+)
+
+// NewExprNodeLiteral constructs a literal node.
 func NewExprNodeLiteral(value interface{}) ExprNode {
 	return ExprNode{
 		Type:  NodeTypeLiteral,
@@ -26,6 +43,7 @@ func NewExprNodeLiteral(value interface{}) ExprNode {
 	}
 }
 
+// NewExprNodeVariable constructs a variable node.
 func NewExprNodeVariable(name string) ExprNode {
 	return ExprNode{
 		Type: NodeTypeVariable,
@@ -33,6 +51,7 @@ func NewExprNodeVariable(name string) ExprNode {
 	}
 }
 
+// NewExprNodeOperator constructs an operator node.
 func NewExprNodeOperator(name string, args ...ExprNode) ExprNode {
 	return ExprNode{
 		Type: NodeTypeOperator,
@@ -41,6 +60,7 @@ func NewExprNodeOperator(name string, args ...ExprNode) ExprNode {
 	}
 }
 
+// IsOperator returns true if this node is an operator with matching name.
 func (node ExprNode) IsOperator(name string) bool {
 	return node.Type == NodeTypeOperator && node.Name == name
 }
@@ -76,6 +96,7 @@ func (stage *evaluationStage) ToExprNode() (ExprNode, error) {
 		PLUS, MINUS, BITWISE_AND, BITWISE_OR, BITWISE_XOR,
 		BITWISE_LSHIFT, BITWISE_RSHIFT, MULTIPLY, DIVIDE,
 		MODULUS, EXPONENT, TERNARY_TRUE, TERNARY_FALSE, COALESCE:
+		// binary operator or ternary if
 		left, err := stage.leftStage.ToExprNode()
 		if err != nil {
 			return ExprNode{}, err
@@ -85,11 +106,13 @@ func (stage *evaluationStage) ToExprNode() (ExprNode, error) {
 			return ExprNode{}, err
 		}
 		if stage.symbol == TERNARY_FALSE {
+			// ternary if
 			if !left.IsOperator("?") {
 				return ExprNode{}, fmt.Errorf("unexpected ternary: %v", left)
 			}
 			return NewExprNodeOperator("if", left.Args[0], left.Args[1], right), nil
 		}
+		// binary operator
 		opName := stage.symbol.String()
 		if stage.symbol == EQ {
 			opName = "==" // for some reason EQ.String() is '='
@@ -97,6 +120,7 @@ func (stage *evaluationStage) ToExprNode() (ExprNode, error) {
 		return NewExprNodeOperator(opName, left, right), nil
 
 	case NEGATE, INVERT, BITWISE_NOT:
+		// unary operator
 		right, err := stage.rightStage.ToExprNode()
 		if err != nil {
 			return ExprNode{}, err
