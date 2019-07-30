@@ -8,30 +8,68 @@ import (
 	"unicode"
 )
 
+// ExprNodePrinter is an output builder for ExprNode.
+// Use AppendString or AppendNode from custom handlers to append to output.
 type ExprNodePrinter struct {
 	nodeHandler func(ExprNode, *ExprNodePrinter) error
 	output      strings.Builder
 	err         error
 }
 
+// PrintConfig is used to override default behavior when printing an expression with a default node handler.
 type PrintConfig struct {
-	FormatBoolLiteral   func(bool) string
+	// FormatBoolLiteral overrides boolean literal output.
+	// Default handler returns "true" or "false".
+	FormatBoolLiteral func(bool) string
+
+	// FormatNumberLiteral overrides number literal output.
+	// Default handler formats number with strconv.FormatFloat(value, 'f', -1, 64).
 	FormatNumberLiteral func(float64) string
+
+	// FormatStringLiteral overrides string literal output.
+	// Default handler returns quoted value with other quotes and newlines escaped with backslash (\).
 	FormatStringLiteral func(string) string
-	FormatVariable      func(string) string
-	OperatorMap         map[string]string
-	OperatorMapper      func(name string, arity int) string
-	InfixOperators      map[string]bool
-	PrecedenceFn        func(name string, arity int) int
-	Operators           map[string]func(args []ExprNode, output *ExprNodePrinter) error
+
+	// FormatVariable overrides variable output.
+	// Default handler simply returns identifier as is.
+	// This can be used to map variables to different names.
+	FormatVariable func(string) string
+
+	// OperatorMap contains a mapping for operator name overrides.
+	// For example, ** -> pow mapping will change output from x ** y to pow(x, y).
+	OperatorMap map[string]string
+
+	// OperatorMapper is similar to OperatorMap, but allows mapping by name and arity (number of arguments).
+	// For example, this can override unary and binary minus in a different way.
+	OperatorMapper func(name string, arity int) string
+
+	// InfixOperators contains overrides of what operators are printed in infix notation.
+	// By default, all operators written in special symbols and "in" operator are considered infix.
+	// For example, overriding pow -> true will change output from pow(x, y) to x pow y.
+	// This only applies if an operator is binary (two arguments).
+	InfixOperators map[string]bool
+
+	// PrecedenceFn overrides precedence of operators.
+	// Higher precedence means that the operation should performed first.
+	// See defaultPrecedence(string, int) for defaults.
+	PrecedenceFn func(name string, arity int) int
+
+	// Operators overrides default behavior when printing a particular operator.
+	// By default, special symbol unary operators are printed in prefix notation: !x, ~x.
+	// Infix binary operators (see InfixOperators) are printed in infix notation: x + y, x && y.
+	// Ternary if (?:) is printed like this: condition ? then : else.
+	// All other operators are printed as function calls: square(x), now(), pow(x, y).
+	Operators map[string]func(args []ExprNode, output *ExprNodePrinter) error
 }
 
+// AppendString appends a token to output as is.
 func (b *ExprNodePrinter) AppendString(token string) {
 	if b.err == nil {
 		b.output.WriteString(token)
 	}
 }
 
+// AppendNode invokes node handler that will print node to output.
 func (b *ExprNodePrinter) AppendNode(node ExprNode) {
 	if b.err == nil {
 		err := b.nodeHandler(node, b)
@@ -41,10 +79,14 @@ func (b *ExprNodePrinter) AppendNode(node ExprNode) {
 	}
 }
 
+// Print converts EvaluableExpression to string with default node handler.
+// PrintConfig can be used to configure output. Use empty PrintConfig for default behavior.
 func (expr EvaluableExpression) Print(config PrintConfig) (string, error) {
 	return expr.PrintWithHandler(defaultNodeHandler(config))
 }
 
+// PrintWithHandler converts EvaluableExpression to string using the specified node handler.
+// Node handler takes an ExprNode and feeds output to ExprNodePrinter.
 func (expr EvaluableExpression) PrintWithHandler(nodeHandler func(ExprNode, *ExprNodePrinter) error) (string, error) {
 	node, err := expr.evaluationStages.ToExprNode()
 	if err != nil {
@@ -53,10 +95,14 @@ func (expr EvaluableExpression) PrintWithHandler(nodeHandler func(ExprNode, *Exp
 	return node.PrintWithHandler(nodeHandler)
 }
 
+// Print converts ExprNode to string with default node handler.
+// PrintConfig can be used to configure output. Use empty PrintConfig for default behavior.
 func (node ExprNode) Print(config PrintConfig) (string, error) {
 	return node.PrintWithHandler(defaultNodeHandler(config))
 }
 
+// PrintWithHandler converts ExprNode to string using the specified node handler.
+// Node handler takes an ExprNode and feeds output to ExprNodePrinter.
 func (node ExprNode) PrintWithHandler(nodeHandler func(ExprNode, *ExprNodePrinter) error) (string, error) {
 	builder := &ExprNodePrinter{nodeHandler: nodeHandler}
 	builder.AppendNode(node)
@@ -183,7 +229,7 @@ func operator(name string, args []ExprNode, output *ExprNodePrinter, config *Pri
 	}
 
 	// ternary if: x ? y : z
-	if mappedName == "if" && arity == 3 {
+	if mappedName == "?:" && arity == 3 {
 		selfPrecedence := config.precedence(name, arity)
 		conditionPrecedence := config.precedenceForNode(args[0])
 		thenPrecedence := config.precedenceForNode(args[1])
@@ -272,8 +318,12 @@ func (config *PrintConfig) precedence(operator string, arity int) int {
 		mappedName := config.mappedName(operator, arity)
 		return config.PrecedenceFn(mappedName, arity)
 	}
+	return defaultPrecedence(operator, arity)
+}
+
+func defaultPrecedence(operator string, arity int) int {
 	switch operator {
-	case "if":
+	case "?:":
 		return 0
 	case "??":
 		return 1

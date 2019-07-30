@@ -110,7 +110,7 @@ func (stage *evaluationStage) ToExprNode() (ExprNode, error) {
 			if !left.IsOperator("?") {
 				return ExprNode{}, fmt.Errorf("unexpected ternary: %v", left)
 			}
-			return NewExprNodeOperator("if", left.Args[0], left.Args[1], right), nil
+			return NewExprNodeOperator("?:", left.Args[0], left.Args[1], right), nil
 		}
 		// binary operator
 		opName := stage.symbol.String()
