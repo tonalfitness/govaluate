@@ -1,6 +1,10 @@
 package govaluate
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestReduce(test *testing.T) {
 	runTest(test, "x + y * z", map[string]interface{}{
@@ -113,4 +117,14 @@ func runTest(test *testing.T, input string, parameters map[string]interface{}, e
 		test.Errorf("Actual:   '%v'", output)
 		return
 	}
+}
+
+func TestReduceVars(t *testing.T) {
+	expr, err := NewEvaluableExpression("x || y || z")
+	assert.Nil(t, err)
+
+	reduced, err := expr.Reduce(map[string]interface{}{"x": false})
+	assert.Nil(t, err)
+
+	assert.Equal(t, []string{"y", "z"}, reduced.Vars())
 }
