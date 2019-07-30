@@ -65,11 +65,6 @@ func (node ExprNode) IsOperator(name string) bool {
 	return node.Type == NodeTypeOperator && node.Name == name
 }
 
-// IsLiteral returns true if this node is a literal with matching value.
-func (node ExprNode) IsLiteral(value interface{}) bool {
-	return node.Type == NodeTypeLiteral && node.Value == value
-}
-
 func (stage *evaluationStage) ToExprNode() (ExprNode, error) {
 	if stage == nil {
 		return ExprNode{}, fmt.Errorf("stage == nil")
@@ -135,13 +130,4 @@ func (stage *evaluationStage) ToExprNode() (ExprNode, error) {
 	}
 
 	return ExprNode{}, fmt.Errorf("unknown symbol: %v", stage.symbol)
-}
-
-type paramCaptor struct {
-	lastParameterName string
-}
-
-func (p *paramCaptor) Get(key string) (interface{}, error) {
-	p.lastParameterName = key
-	return 0.0, nil
 }
