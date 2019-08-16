@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 /*
@@ -22,6 +24,21 @@ type EvaluationTest struct {
 type EvaluationParameter struct {
 	Name  string
 	Value interface{}
+}
+
+func TestGetValue(t *testing.T) {
+	expr, err := NewEvaluableExpression("4.21")
+	assert.Nil(t, err)
+	val, ok := expr.GetValue()
+	assert.True(t, ok)
+	assert.Equal(t, 4.21, val)
+}
+
+func TestGetValueNotOk(t *testing.T) {
+	expr, err := NewEvaluableExpression("4.21 + x")
+	assert.Nil(t, err)
+	_, ok := expr.GetValue()
+	assert.False(t, ok)
 }
 
 func TestNoParameterEvaluation(test *testing.T) {
@@ -710,7 +727,7 @@ func TestNoParameterEvaluation(test *testing.T) {
 			Expected: true,
 		},
 		EvaluationTest{
-			
+
 			Name:  "Ternary/Java EL ambiguity",
 			Input: "false ? foo:length()",
 			Functions: map[string]ExpressionFunction{

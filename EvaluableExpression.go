@@ -125,6 +125,19 @@ func NewEvaluableExpressionWithFunctions(expression string, functions map[string
 	return ret, nil
 }
 
+// GetValue returns (value, true) if this expression is a simple const value. (nil, false) otherwise.
+func (expr EvaluableExpression) GetValue() (interface{}, bool) {
+	if len(expr.tokens) != 1 {
+		return nil, false
+	}
+	token := expr.tokens[0]
+	switch token.Kind {
+	case BOOLEAN, NUMERIC, STRING:
+		return token.Value, true
+	}
+	return nil, false
+}
+
 /*
 	Same as `Eval`, but automatically wraps a map of parameters into a `govalute.Parameters` structure.
 */
