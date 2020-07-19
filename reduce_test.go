@@ -93,25 +93,19 @@ func TestReduce(test *testing.T) {
 
 	runTest(test, "x + y * z", map[string]interface{}{
 		"x": 1.0,
-		"y": "a",
+		"y": MustParse("a"),
 		"z": 3.0,
 	}, "1 + a * 3")
 
 	runTest(test, "x + y * z", map[string]interface{}{
 		"x": 1.0,
-		"y": "2",
+		"y": MustParse("(1+1)"),
 		"z": 3.0,
 	}, "7")
 
 	runTest(test, "x + y * z", map[string]interface{}{
 		"x": 1.0,
-		"y": "(1+1)",
-		"z": 3.0,
-	}, "7")
-
-	runTest(test, "x + y * z", map[string]interface{}{
-		"x": 1.0,
-		"y": "(1+1 - d + h)",
+		"y": MustParse("(1+1 - d + h)"),
 		"z": 3.0,
 	}, "1 + (2 - d + h) * 3")
 }

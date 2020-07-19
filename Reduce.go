@@ -16,27 +16,21 @@ func (expr ExprNode) Reduce(params EvalParams, optimizers map[string]Optimizer) 
 			return expr, nil
 		}
 
-		val, stringType := value.(string)
-		if !stringType {
-			// variable is known and non-string, replace it with value literal
+		node, nodeType := value.(ExprNode)
+		if !nodeType {
+			// variable is known and non-node, replace it with value literal
 			return NewExprNodeLiteral(value, expr.SourcePos, expr.SourceLen), nil
 		}
-
-		// Try to parse string in case var is an additional expression
-		node, err := Parse(val)
-		if err != nil {
-			return NewExprNodeLiteral(value, expr.SourcePos, expr.SourceLen), nil
-		}
-		node.SourcePos = expr.SourcePos
-		node.SourceLen = expr.SourceLen
 
 		for _, v := range node.Vars() {
 			if v == expr.Name {
 				return ExprNode{}, fmt.Errorf("variable can not refer to itself: %v [pos=%d; len=%d]", expr.Name, expr.SourcePos, expr.SourceLen)
 			}
 		}
+		node.SourcePos = expr.SourcePos
+		node.SourceLen = expr.SourceLen
 
-		// Reduce the new node
+		// Try to reduce the var node
 		reduced, err := node.Reduce(params, optimizers)
 		if err != nil {
 			return node, nil

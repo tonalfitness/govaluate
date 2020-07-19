@@ -17,16 +17,12 @@ func (expr ExprNode) Eval(params EvalParams) (interface{}, error) {
 			return nil, fmt.Errorf("variable undefined: %v [pos=%d; len=%d]", expr.Name, expr.SourcePos, expr.SourceLen)
 		}
 
-		val, stringType := value.(string)
-		if !stringType {
+		// Check if var is a node that can be Eval'd
+		node, nodeType := value.(ExprNode)
+		if !nodeType {
 			return value, nil
 		}
 
-		// Try to parse string in case var is an additional expression
-		node, err := Parse(val)
-		if err != nil {
-			return value, nil
-		}
 		for _, v := range node.Vars() {
 			if v == expr.Name {
 				return nil, fmt.Errorf("variable can not refer to itself: %v [pos=%d; len=%d]", expr.Name, expr.SourcePos, expr.SourceLen)
