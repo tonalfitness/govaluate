@@ -1,6 +1,7 @@
 package govaluate
 
 import (
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,6 +14,81 @@ func TestEval(t *testing.T) {
 		result interface{}
 	}
 	testCases := [...]testCase{
+		testCase{
+			"floor(3.5)",
+			map[string]interface{}{},
+			3.0,
+		},
+		testCase{
+			"ceil(1.1)",
+			map[string]interface{}{},
+			2.0,
+		},
+		testCase{
+			"round(3.3)",
+			map[string]interface{}{},
+			3.0,
+		},
+		testCase{
+			"round(4.5)",
+			map[string]interface{}{},
+			5.0,
+		},
+		testCase{
+			"sqrt(4.8)",
+			map[string]interface{}{},
+			math.Sqrt(4.8),
+		},
+		testCase{
+			"sin(20)",
+			map[string]interface{}{},
+			math.Sin(20.0),
+		},
+		testCase{
+			"cos(20.0)",
+			map[string]interface{}{},
+			math.Cos(20.0),
+		},
+		testCase{
+			"tan(20.0)",
+			map[string]interface{}{},
+			math.Tan(20.0),
+		},
+		testCase{
+			"tanh(20.0)",
+			map[string]interface{}{},
+			math.Tanh(20.0),
+		},
+		testCase{
+			"min(3, 4)",
+			map[string]interface{}{},
+			3.0,
+		},
+		testCase{
+			"max(3, 4)",
+			map[string]interface{}{},
+			4.0,
+		},
+		testCase{
+			"abs(-3)",
+			map[string]interface{}{},
+			3.0,
+		},
+		testCase{
+			"log(3.0)",
+			map[string]interface{}{},
+			math.Log(3.0),
+		},
+		testCase{
+			"log2(3.0)",
+			map[string]interface{}{},
+			math.Log2(3.0),
+		},
+		testCase{
+			"log10(3.0)",
+			map[string]interface{}{},
+			math.Log10(3.0),
+		},
 		testCase{
 			"x + y * z**2",
 			map[string]interface{}{"x": -1.0, "y": 3.0, "z": 5.0},

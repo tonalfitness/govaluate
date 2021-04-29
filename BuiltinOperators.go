@@ -44,6 +44,14 @@ func BuiltinOperators() map[string]Operator {
 		"sqrt":  builtinSqrt,
 		"sin":   builtinSin,
 		"cos":   builtinCos,
+		"tan":   builtinTan,
+		"tanh":  builtinTanh,
+		"min":   builtinMin,
+		"max":   builtinMax,
+		"abs":   builtinAbs,
+		"log":   builtinLog,
+		"log2":  builtinLog2,
+		"log10": builtinLog10,
 	}
 }
 
@@ -288,6 +296,46 @@ func builtinSin(ctx EvalContext) (interface{}, error) {
 func builtinCos(ctx EvalContext) (interface{}, error) {
 	arg, err := unaryNumericArg(ctx)
 	return math.Cos(arg), err
+}
+
+func builtinTan(ctx EvalContext) (interface{}, error) {
+	arg, err := unaryNumericArg(ctx)
+	return math.Tan(arg), err
+}
+
+func builtinTanh(ctx EvalContext) (interface{}, error) {
+	arg, err := unaryNumericArg(ctx)
+	return math.Tanh(arg), err
+}
+
+func builtinMin(ctx EvalContext) (interface{}, error) {
+	a, b, err := binaryNumericArgs(ctx)
+	return math.Min(a, b), err
+}
+
+func builtinMax(ctx EvalContext) (interface{}, error) {
+	a, b, err := binaryNumericArgs(ctx)
+	return math.Max(a, b), err
+}
+
+func builtinAbs(ctx EvalContext) (interface{}, error) {
+	arg, err := unaryNumericArg(ctx)
+	return math.Abs(arg), err
+}
+
+func builtinLog(ctx EvalContext) (interface{}, error) {
+	arg, err := unaryNumericArg(ctx)
+	return math.Log(arg), err
+}
+
+func builtinLog2(ctx EvalContext) (interface{}, error) {
+	arg, err := unaryNumericArg(ctx)
+	return math.Log2(arg), err
+}
+
+func builtinLog10(ctx EvalContext) (interface{}, error) {
+	arg, err := unaryNumericArg(ctx)
+	return math.Log10(arg), err
 }
 
 func binaryArgs(ctx EvalContext) (interface{}, interface{}, error) {
