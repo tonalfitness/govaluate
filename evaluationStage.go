@@ -325,14 +325,16 @@ func makeAccessorStage(pair []string) evaluationOperator {
 				coreValue = coreValue.Elem()
 			}
 
-			if coreValue.Kind() != reflect.Struct {
-				return nil, errors.New("Unable to access '" + pair[i] + "', '" + pair[i-1] + "' is not a struct")
+			if coreValue.Kind() == reflect.Struct {
+				field := coreValue.FieldByName(pair[i])
+				if field != (reflect.Value{}) {
+					value = field.Interface()
+					continue
+				}
 			}
 
-			field := coreValue.FieldByName(pair[i])
-			if field != (reflect.Value{}) {
-				value = field.Interface()
-				continue
+			if !coreValue.IsValid() {
+				return nil, errors.New("Unable to access '" + pair[i] + "', '" + pair[i-1] + "' is not valid")
 			}
 
 			method := coreValue.MethodByName(pair[i])
